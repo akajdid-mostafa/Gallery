@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Image from 'next/image'; // Import the Next.js Image component
 import { Album } from '../../services/api';
 import { uploadImage } from '../../services/upload';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { X } from 'lucide-react';
 
 interface AlbumFormProps {
   album?: Album;
@@ -23,8 +25,16 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
     dateAlbume: new Date().toISOString().split('T')[0],
   });
   const [images, setImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Clear preview URLs when component unmounts
+    return () => {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [previewUrls]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -32,7 +42,24 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setImages(Array.from(e.target.files));
+      const newImages = Array.from(e.target.files);
+      setImages(prevImages => [...prevImages, ...newImages]);
+      
+      const newPreviewUrls = newImages.map(file => URL.createObjectURL(file));
+      setPreviewUrls(prevUrls => [...prevUrls, ...newPreviewUrls]);
+    }
+  };
+
+  const handleRemoveImage = (index: number, isExisting: boolean) => {
+    if (isExisting) {
+      setFormData(prevData => ({
+        ...prevData,
+        img: prevData.img.filter((_, i) => i !== index)
+      }));
+    } else {
+      setImages(prevImages => prevImages.filter((_, i) => i !== index));
+      URL.revokeObjectURL(previewUrls[index]);
+      setPreviewUrls(prevUrls => prevUrls.filter((_, i) => i !== index));
     }
   };
 
@@ -45,6 +72,7 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
       const updatedAlbum = { ...formData, img: [...formData.img, ...uploadedUrls] };
       await onSubmit(updatedAlbum);
       setImages([]);
+      setPreviewUrls([]);
       setFormData({
         type: '',
         title: '',
@@ -68,7 +96,7 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
   };
 
   return (
-    <Card>
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>{album ? 'Edit Album' : 'Add New Album'}</CardTitle>
       </CardHeader>
@@ -89,7 +117,45 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="images">Images</Label>
-              <Input id="images" name="images" type="file" multiple onChange={handleImageChange} />
+              <Input id="images" name="images" type="file" multiple onChange={handleImageChange} className="mb-2" />
+              <div className="grid grid-cols-3 gap-2">
+                {formData.img.map((url, index) => (
+                  <div key={`existing-${index}`} className="relative">
+                    <Image
+                      src={url}
+                      alt={`Album image ${index + 1}`}
+                      width={100} // Set appropriate width
+                      height={100} // Set appropriate height
+                      className="w-full h-24 object-cover rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index, true)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+                {previewUrls.map((url, index) => (
+                  <div key={`preview-${index}`} className="relative">
+                    <Image
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      width={100} // Set appropriate width
+                      height={100} // Set appropriate height
+                      className="w-full h-24 object-cover rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index, false)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </form>
@@ -103,4 +169,3 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
     </Card>
   );
 }
-

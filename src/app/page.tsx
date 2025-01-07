@@ -66,12 +66,18 @@ export default function GalleryPage() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4">Gallery Control</h1>
+      <div className="mb-6"> 
+      <AlbumForm onSubmit={handleSubmit}  />
+      </div>
       {isLoading ? (
         <div>Loading albums...</div>
       ) : (
-        <AlbumList initialAlbums={albums} onAlbumsChange={loadAlbums} />
+        <div className='mb-16'>
+          <AlbumList initialAlbums={albums} onAlbumsChange={loadAlbums} />
+        </div>
+        
       )}
-      <AlbumForm onSubmit={handleSubmit} />
+      
     </div>
   );
 }

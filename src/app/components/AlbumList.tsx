@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image'; // Import the Next.js Image component
+import Image from 'next/image'; 
 import { Album, deleteAlbum, updateAlbum } from '../../services/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
