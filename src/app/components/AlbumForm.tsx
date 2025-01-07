@@ -36,7 +36,7 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
     };
   }, [previewUrls]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -134,7 +134,23 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="type">Type</Label>
-              <Input id="type" name="type" value={formData.type} onChange={handleChange} required />
+              <select
+                id="type"
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                className="p-2 border rounded"
+                required
+              >
+                <option value="">Select a type</option>
+                <option value="1">Public</option>
+                <option value="2">Formation</option>
+                <option value="3">Formation-Nurs</option>
+                <option value="4">Nurs</option>
+                <option value="5">Nettoyage</option>
+                <option value="6">Langue</option>
+                <option value="7">Contract</option>
+              </select>
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="dateAlbume">Date</Label>
