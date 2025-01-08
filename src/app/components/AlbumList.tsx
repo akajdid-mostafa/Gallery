@@ -19,8 +19,9 @@ interface AlbumListProps {
 export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListProps) {
   const [editingAlbum, setEditingAlbum] = useState<Album | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // State to control edit dialog
   const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
-  const [expandedAlbums, setExpandedAlbums] = useState<Record<string, boolean>>({}); // Track expanded state for each album
+  const [expandedAlbums, setExpandedAlbums] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -56,7 +57,8 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
   };
 
   const handleEdit = (album: Album) => {
-    setEditingAlbum(album);
+    setEditingAlbum(album); // Set the album to edit
+    setIsEditDialogOpen(true); // Open the edit dialog
   };
 
   const handleUpdate = async (updatedAlbum: Album) => {
@@ -64,7 +66,6 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
       if (editingAlbum && editingAlbum.id) {
         await updateAlbum(editingAlbum.id, updatedAlbum);
         await onAlbumsChange();
-        setEditingAlbum(null);
         toast({
           title: "Success",
           description: "Album updated successfully",
@@ -77,6 +78,9 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
         description: "Failed to update album. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsEditDialogOpen(false); // Close the edit dialog
+      setEditingAlbum(null); // Reset the editing album
     }
   };
 
@@ -93,14 +97,14 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
   const toggleAlbumExpansion = (albumId: string) => {
     setExpandedAlbums((prev) => ({
       ...prev,
-      [albumId]: !prev[albumId], // Toggle expanded state for this album
+      [albumId]: !prev[albumId],
     }));
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {initialAlbums.map((album) => {
-        const isExpanded = expandedAlbums[album.id!]; // Check if this album is expanded
+        const isExpanded = expandedAlbums[album.id!];
 
         return (
           <Card key={album.id}>
@@ -115,9 +119,9 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
                   <a
                     key={index}
                     href={url}
-                    data-fancybox={`gallery-${album.id}`} // Group all images in the same album
+                    data-fancybox={`gallery-${album.id}`}
                     data-caption={`Album image ${index + 1}`}
-                    style={{ display: isExpanded || index < 3 ? 'block' : 'none' }} // Hide extra images when collapsed
+                    style={{ display: isExpanded || index < 3 ? 'block' : 'none' }}
                   >
                     <Image
                       src={url}
@@ -129,7 +133,7 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
                   </a>
                 ))}
               </div>
-              {album.img.length > 3 && ( // Only show the toggle button if there are more than 3 images
+              {album.img.length > 3 && (
                 <Button
                   onClick={() => toggleAlbumExpansion(album.id!)}
                   variant="outline"
@@ -152,9 +156,23 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
       })}
 
       {/* Edit Album Dialog */}
-      {editingAlbum && (
-        <AlbumForm album={editingAlbum} onSubmit={handleUpdate} onCancel={() => setEditingAlbum(null)} />
-      )}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Album</DialogTitle>
+            <DialogDescription>
+              Make changes to the album here. Click save when you&apos;re done.
+            </DialogDescription>
+          </DialogHeader>
+          {editingAlbum && (
+            <AlbumForm
+              album={editingAlbum}
+              onSubmit={handleUpdate}
+              onCancel={() => setIsEditDialogOpen(false)} // Close the dialog on cancel
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
