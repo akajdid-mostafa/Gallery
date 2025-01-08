@@ -18,9 +18,9 @@ interface AlbumListProps {
 
 export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListProps) {
   const [editingAlbum, setEditingAlbum] = useState<Album | null>(null);
-  const [expandedAlbums, setExpandedAlbums] = useState<Record<string, boolean>>({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
+  const [expandedAlbums, setExpandedAlbums] = useState<Record<string, boolean>>({}); // Track expanded state for each album
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,13 +80,6 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
     }
   };
 
-  const toggleAlbumExpansion = (albumId: string) => {
-    setExpandedAlbums(prev => ({
-      ...prev,
-      [albumId]: !prev[albumId]
-    }));
-  };
-
   const openDeleteDialog = (id: string) => {
     setAlbumToDelete(id);
     setIsDeleteDialogOpen(true);
@@ -97,63 +90,73 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
     setAlbumToDelete(null);
   };
 
+  const toggleAlbumExpansion = (albumId: string) => {
+    setExpandedAlbums((prev) => ({
+      ...prev,
+      [albumId]: !prev[albumId], // Toggle expanded state for this album
+    }));
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {initialAlbums.map(album => (
-        <Card key={album.id}>
-          <CardHeader>
-            <CardTitle>{album.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Type: {album.type}</p>
-            <p>Date: {album.dateAlbume}</p>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              {/* Render only the first 3 images */}
-              {album.img.slice(0, 3).map((url, index) => (
-                <a key={index} href={url} data-fancybox={`gallery-${album.id}`} data-caption={`Album image ${index + 1}`}>
-                  <Image
-                    src={url}
-                    alt={`Album image ${index + 1}`}
-                    width={100} // Set appropriate width
-                    height={100} // Set appropriate height
-                    className="w-full h-24 object-cover"
-                  />
-                </a>
-              ))}
-              {/* Add hidden links for the rest of the images */}
-              {album.img.slice(3).map((url, index) => (
-                <a key={index + 3} href={url} data-fancybox={`gallery-${album.id}`} data-caption={`Album image ${index + 4}`} style={{ display: 'none' }}>
-                  <Image
-                    src={url}
-                    alt={`Album image ${index + 4}`}
-                    width={100} // Set appropriate width
-                    height={100} // Set appropriate height
-                    className="w-full h-24 object-cover"
-                  />
-                </a>
-              ))}
-            </div>
-            {album.img.length > 3 && (
-              <Button 
-                onClick={() => toggleAlbumExpansion(album.id!)} 
-                variant="outline" 
-                className="mt-2 w-full"
-              >
-                {expandedAlbums[album.id!] ? 'Show Less' : `Show All (${album.img.length})`}
+      {initialAlbums.map((album) => {
+        const isExpanded = expandedAlbums[album.id!]; // Check if this album is expanded
+
+        return (
+          <Card key={album.id}>
+            <CardHeader>
+              <CardTitle>{album.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>Type: {album.type}</p>
+              <p>Date: {album.dateAlbume}</p>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {album.img.map((url, index) => (
+                  <a
+                    key={index}
+                    href={url}
+                    data-fancybox={`gallery-${album.id}`} // Group all images in the same album
+                    data-caption={`Album image ${index + 1}`}
+                    style={{ display: isExpanded || index < 3 ? 'block' : 'none' }} // Hide extra images when collapsed
+                  >
+                    <Image
+                      src={url}
+                      alt={`Album image ${index + 1}`}
+                      width={100}
+                      height={100}
+                      className="w-full h-24 object-cover"
+                    />
+                  </a>
+                ))}
+              </div>
+              {album.img.length > 3 && ( // Only show the toggle button if there are more than 3 images
+                <Button
+                  onClick={() => toggleAlbumExpansion(album.id!)}
+                  variant="outline"
+                  className="mt-2 w-full"
+                >
+                  {isExpanded ? 'Show Less' : `Show All (${album.img.length})`}
+                </Button>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => handleEdit(album)} className="mr-2">
+                Edit
               </Button>
-            )}
-          </CardContent>
-          <CardFooter>
-            <Button onClick={() => handleEdit(album)} className="mr-2">Edit</Button>
-            <Button onClick={() => album.id && openDeleteDialog(album.id)} variant="destructive">Delete</Button>
-          </CardFooter>
-        </Card>
-      ))}
+              <Button onClick={() => album.id && openDeleteDialog(album.id)} variant="destructive">
+                Delete
+              </Button>
+            </CardFooter>
+          </Card>
+        );
+      })}
+
+      {/* Edit Album Dialog */}
       {editingAlbum && (
         <AlbumForm album={editingAlbum} onSubmit={handleUpdate} onCancel={() => setEditingAlbum(null)} />
       )}
 
-      {/* Confirmation Dialog */}
+      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -163,8 +166,12 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDeleteDialog}>Cancel</Button>
-            <Button variant="destructive" onClick={() => albumToDelete && handleDelete(albumToDelete)}>Delete</Button>
+            <Button variant="outline" onClick={closeDeleteDialog}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => albumToDelete && handleDelete(albumToDelete)}>
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
