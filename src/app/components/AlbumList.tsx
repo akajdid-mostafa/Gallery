@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Album, deleteAlbum, updateAlbum } from '../../services/api';
+import { deleteImageFromStorage } from '../../services/upload'; // Import deleteImageFromStorage
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -19,7 +20,7 @@ interface AlbumListProps {
 export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListProps) {
   const [editingAlbum, setEditingAlbum] = useState<Album | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // State to control edit dialog
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
   const [expandedAlbums, setExpandedAlbums] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
@@ -37,12 +38,18 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteAlbum(id);
-      await onAlbumsChange();
-      toast({
-        title: "Success",
-        description: "Album deleted successfully",
-      });
+      const albumToDelete = initialAlbums.find(album => album.id === id);
+      if (albumToDelete) {
+        // Delete all images from Firebase Storage
+        await Promise.all(albumToDelete.img.map(deleteImageFromStorage));
+        // Delete the album from the database
+        await deleteAlbum(id);
+        await onAlbumsChange();
+        toast({
+          title: "Success",
+          description: "Album deleted successfully",
+        });
+      }
     } catch (error) {
       console.error('Error deleting album:', error);
       toast({
@@ -57,8 +64,8 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
   };
 
   const handleEdit = (album: Album) => {
-    setEditingAlbum(album); // Set the album to edit
-    setIsEditDialogOpen(true); // Open the edit dialog
+    setEditingAlbum(album);
+    setIsEditDialogOpen(true);
   };
 
   const handleUpdate = async (updatedAlbum: Album) => {
@@ -79,8 +86,8 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
         variant: "destructive",
       });
     } finally {
-      setIsEditDialogOpen(false); // Close the edit dialog
-      setEditingAlbum(null); // Reset the editing album
+      setIsEditDialogOpen(false);
+      setEditingAlbum(null);
     }
   };
 
@@ -161,14 +168,14 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
           <DialogHeader>
             <DialogTitle>Edit Album</DialogTitle>
             <DialogDescription>
-              Make changes to the album here. Click save when you&apos;re done.
+              Make changes to the album here. Click save when you&re done.
             </DialogDescription>
           </DialogHeader>
           {editingAlbum && (
             <AlbumForm
               album={editingAlbum}
               onSubmit={handleUpdate}
-              onCancel={() => setIsEditDialogOpen(false)} // Close the dialog on cancel
+              onCancel={() => setIsEditDialogOpen(false)}
             />
           )}
         </DialogContent>

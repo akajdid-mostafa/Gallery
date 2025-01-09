@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image'; // Import the Next.js Image component
+import Image from 'next/image';
 import { Album } from '../../services/api';
-import { uploadImage } from '../../services/upload';
+import { uploadImage, deleteImageFromStorage } from '../../services/upload'; // Import deleteImageFromStorage
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,12 +50,27 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
     }
   };
 
-  const handleRemoveImage = (index: number, isExisting: boolean) => {
+  const handleRemoveImage = async (index: number, isExisting: boolean) => {
     if (isExisting) {
-      setFormData(prevData => ({
-        ...prevData,
-        img: prevData.img.filter((_, i) => i !== index),
-      }));
+      const imageUrl = formData.img[index];
+      try {
+        await deleteImageFromStorage(imageUrl); // Delete image from Firebase Storage
+        setFormData(prevData => ({
+          ...prevData,
+          img: prevData.img.filter((_, i) => i !== index),
+        }));
+        toast({
+          title: 'Success',
+          description: 'Image deleted successfully.',
+        });
+      } catch (error) {
+        console.error('Error deleting image from storage:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete image from storage.',
+          variant: 'destructive',
+        });
+      }
     } else {
       setImages(prevImages => prevImages.filter((_, i) => i !== index));
       URL.revokeObjectURL(previewUrls[index]);
