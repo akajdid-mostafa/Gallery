@@ -158,13 +158,13 @@ export default function AlbumForm({ album, onSubmit, onCancel }: AlbumFormProps)
                 required
               >
                 <option value="">Select a type</option>
-                <option value="1">Public</option>
-                <option value="2">Formation</option>
-                <option value="3">Formation-Nurs</option>
-                <option value="4">Nurs</option>
-                <option value="5">Nettoyage</option>
-                <option value="6">Langue</option>
-                <option value="7">Contract</option>
+                <option value="Public">Public</option>
+                <option value="Formation">Formation</option>
+                <option value="Formation-Nurs">Formation-Nurs</option>
+                <option value="Nurs">Nurs</option>
+                <option value="Nettoyage">Nettoyage</option>
+                <option value="Langue">Langue</option>
+                <option value="Contract">Contract</option>
               </select>
             </div>
             <div className="flex flex-col space-y-1.5">
