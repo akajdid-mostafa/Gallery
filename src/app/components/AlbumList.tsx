@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Album, deleteAlbum, updateAlbum } from '../../services/api';
-import { deleteImageFromStorage } from '../../services/upload'; // Import deleteImageFromStorage
+import { deleteImageFromStorage } from '../../services/upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -24,6 +24,16 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
   const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
   const [expandedAlbums, setExpandedAlbums] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+
+  // Sort albums by dateAlbume (or id as a fallback) in descending order
+  const sortedAlbums = [...initialAlbums].sort((a, b) => {
+    // Use dateAlbume if it exists and is a valid date string
+    if (a.dateAlbume && b.dateAlbume) {
+      return new Date(b.dateAlbume).getTime() - new Date(a.dateAlbume).getTime();
+    }
+    // Fallback to sorting by id if dateAlbume is not available
+    return (b.id || '').localeCompare(a.id || '');
+  });
 
   useEffect(() => {
     Fancybox.bind("[data-fancybox]", {
@@ -110,7 +120,7 @@ export default function AlbumList({ initialAlbums, onAlbumsChange }: AlbumListPr
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {initialAlbums.map((album) => {
+      {sortedAlbums.map((album) => {
         const isExpanded = expandedAlbums[album.id!];
 
         return (
