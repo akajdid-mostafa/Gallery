@@ -37,5 +37,6 @@
     "shadcn-ui": "^0.9.4",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
-  }
+  },
+  "description": "Gallery — a TypeScript-powered project with useful, real-world functionality."
 }
